@@ -1,3 +1,13 @@
+# SDCC
+*.asm
+*.ihx
+*.lst
+*.rel
+*.sym
+*.lk
+*.map
+*.rst
+
 # Prerequisites
 *.d
 
