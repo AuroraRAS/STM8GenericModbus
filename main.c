@@ -4,6 +4,15 @@
 #include <string.h>
 #include <modbus.h>
 
+static const struct ENV
+{
+	uint8_t MODBUS_ADDR;
+	uint8_t UART_BRR1;
+	uint8_t UART_BRR2;
+	uint8_t TIM_PSCR;
+	uint8_t TIM_ARR;
+} *env = (struct ENV*) (volatile uint8_t*) 0x4000;
+
 static bool frame_timeout;
 
 static uint8_t uart_rx_head;
@@ -14,17 +23,13 @@ static uint8_t uart_tx_head;
 static uint8_t uart_tx_size;
 static uint8_t uart_tx_buffer[UINT8_MAX + 1];
 
-const char test[] = { "2333333" };
-
-void frame_timer(void)
-__interrupt 23
+void frame_timer(void) __interrupt 23
 {
 	frame_timeout = true;
 	TIM4_SR &= 0b11111110;
 }
 
-void uart_rx(void)
-__interrupt 21
+void uart_rx(void) __interrupt 21
 {
 	// frame timeout set to false
 	frame_timeout = false;
@@ -37,8 +42,7 @@ __interrupt 21
 	TIM4_CR1 |= 0b00000001;
 }
 
-void uart_tx(void)
-__interrupt 20
+void uart_tx(void) __interrupt 20
 {
 	// clear TC bit
 	UART2_SR &= 0b10111111;
@@ -55,18 +59,20 @@ __interrupt 20
 	}
 }
 
-void uart_send(uint8_t *data, uint8_t size) {
+void uart_send(uint8_t *data, uint8_t size)
+{
 	uint8_t i;
 	// stop TX interrupt, update the uart TX buffer
 	UART2_CR2 &= 0b01111111;
 	for (i = 0; i < size; i++)
-		uart_tx_buffer[(uint8_t)(uart_tx_head + i)] = data[i];
+		uart_tx_buffer[(uint8_t) (uart_tx_head + i)] = data[i];
 	uart_tx_size += size;
 	// restart TX interrupt
 	UART2_CR2 |= 0b10000000;
 }
 
-void main(void) {
+void main(void)
+{
 	frame_timeout = false;
 	uart_tx_head = 0;
 	uart_tx_size = 0;
@@ -89,16 +95,14 @@ void main(void) {
 	// RI,TX,RX enable
 	UART2_CR2 |= 0b00101100;
 	UART2_CR3 &= 0b11001111;
-	// set baud to 9600 in 2MHz
-	UART2_BRR1 = 0x0D;
-	UART2_BRR2 = 0x01;
+
+	UART2_BRR1 = env->UART_BRR1;
+	UART2_BRR2 = env->UART_BRR2;
 	//*/
 
 	// Timer init
-	// 4010us = (11bits * 1000000us / 9600baud) * 3.5chars
-	TIM4_PSCR = 4;
-	// 250.625 = 4010us / 2^TIM4_PSCR
-	TIM4_ARR = 251;
+	TIM4_PSCR = env->TIM_PSCR;
+	TIM4_ARR = env->TIM_ARR;
 	// enable TIM4 Update Interrupt
 	TIM4_IER |= 0b00000001;
 	// enable One-pulse mode
@@ -109,31 +113,35 @@ void main(void) {
 	// globle interrupt enable
 	__asm__("rim");
 
-	uart_send(test, sizeof(test));
-//	uart_send((volatile uint8_t*)0x48CD, 12);
+//	uart_send("6", 2);
+//	uart_send(test, sizeof(test));
+//	uart_send((volatile uint8_t*) 0x48CD, 12);
+//	uart_send((uint8_t*)env, sizeof(struct ENV));
 
-	while (true) {
-		if(uart_rx_size == uart_rx_head)
+	while (true)
+	{
+		if (uart_rx_size == uart_rx_head)
 			continue;
 		if (frame_timeout == false)
 			continue;
 
 		uint8_t request_buffer[UINT8_MAX + 1];
 		uint8_t str_size;
-		for (str_size = 0; uart_rx_size != uart_rx_head; str_size++) {
+		for (str_size = 0; uart_rx_size != uart_rx_head; str_size++)
+		{
 			request_buffer[str_size] = uart_rx_buffer[uart_rx_head++];
 		}
 
 		uint8_t response_buffer[UINT8_MAX + 1];
 
-		if(modbus((struct modbus_response *)response_buffer, (struct modbus_request *)request_buffer))
+		if (modbus((struct modbus_response*) response_buffer, (struct modbus_request*) request_buffer, env->MODBUS_ADDR))
 		{
-			if(((struct modbus_request *)request_buffer)->func==3)
-				uart_send(response_buffer, ((struct modbus_response *)response_buffer)->data_len+5);
-			else if(((struct modbus_request *)request_buffer)->func==6)
+			if (((struct modbus_request*) request_buffer)->func == 3)
+				uart_send(response_buffer, ((struct modbus_response*) response_buffer)->data_len + 5);
+			else if (((struct modbus_request*) request_buffer)->func == 6)
 				uart_send(request_buffer, sizeof(struct modbus_request));
 		}
-		else
-			uart_send("error", 6);
+//		else
+//			uart_send("error", 6);
 	}
 }

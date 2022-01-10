@@ -12,4 +12,4 @@ install:
 	stm8flash -c stlinkv2 -p stm8s105k4 -w main.ihx
 
 clean:
-	rm -f *.asm *.ihx *.lst *.rel *.sym *.lk *.map *.rst
+	rm -f *.asm *.ihx *.lst *.rel *.sym *.lk *.map *.rst *.eeprom
