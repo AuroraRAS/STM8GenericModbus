@@ -5,6 +5,15 @@
 #include <stdbool.h>
 #include <asm/stm8/features.h>
 
+#define READ_COIL_STATUS 01
+#define READ_INPUT_STATUS 02
+#define READ_HOLDING_REGISTERS 03
+#define READ_INPUT_REGISTERS 04
+#define WRITE_SINGLE_COIL 05
+#define WRITE_SINGLE_REGISTER 06
+#define WRITE_MULTIPLE_COILS 15
+#define WRITE_MULTIPLE_REGISTERS 16
+
 struct modbus_response
 {
 	uint8_t dev_addr;

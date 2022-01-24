@@ -47,4 +47,5 @@ echo "TIM_ARR is:  $TIM_ARR"
 printf "%b" "$(printf "\\\x%02x\\\x%02x\\\x%02x\\\x%02x\\\x%02x" "$MODBUS_ADDR" "$UART_BRR1" "$UART_BRR2" "$TIM_PSCR" "$TIM_ARR")" > env.eeprom
 
 stm8flash -c stlinkv2 -p stm8s105k4 -s eeprom -w "env.eeprom"
+#stm8flash -c stlinkv2 -p stm8s003f3 -s eeprom -w "env.eeprom"
 echo "OK"

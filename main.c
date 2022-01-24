@@ -115,8 +115,12 @@ void main(void)
 
 //	uart_send("6", 2);
 //	uart_send(test, sizeof(test));
-//	uart_send((volatile uint8_t*) 0x48CD, 12);
+//	uart_send((volatile uint8_t*) 0x48cd, 12);
+//	uart_send((volatile uint8_t*) 0x4865, 12);
 //	uart_send((uint8_t*)env, sizeof(struct ENV));
+
+	uint8_t request_buffer[UINT8_MAX + 1];
+	uint8_t response_buffer[UINT8_MAX + 1];
 
 	while (true)
 	{
@@ -125,20 +129,18 @@ void main(void)
 		if (frame_timeout == false)
 			continue;
 
-		uint8_t request_buffer[UINT8_MAX + 1];
 		uint8_t str_size;
 		for (str_size = 0; uart_rx_size != uart_rx_head; str_size++)
 		{
 			request_buffer[str_size] = uart_rx_buffer[uart_rx_head++];
 		}
 
-		uint8_t response_buffer[UINT8_MAX + 1];
 
 		if (modbus((struct modbus_response*) response_buffer, (struct modbus_request*) request_buffer, env->MODBUS_ADDR))
 		{
-			if (((struct modbus_request*) request_buffer)->func == 3)
+			if (((struct modbus_request*) request_buffer)->func == READ_HOLDING_REGISTERS)
 				uart_send(response_buffer, ((struct modbus_response*) response_buffer)->data_len + 5);
-			else if (((struct modbus_request*) request_buffer)->func == 6)
+			else if (((struct modbus_request*) request_buffer)->func == WRITE_SINGLE_REGISTER && ((struct modbus_request*) request_buffer)->dev_addr != 0)
 				uart_send(request_buffer, sizeof(struct modbus_request));
 		}
 //		else

@@ -60,7 +60,7 @@ bool modbus(struct modbus_response *response, struct modbus_request *request, ui
 	response->func = request->func;
 	uint16_t reg_addr = request->reg_addr_lo + (uint16_t) (request->reg_addr_hi << 8);
 
-	if (request->func == 3)
+	if (request->func == READ_HOLDING_REGISTERS)
 	{
 		uint16_t reg_count = request->reg_count_lo + (uint16_t) (request->reg_count_hi << 8);
 		response->data_len = reg_count * 2;
@@ -80,9 +80,10 @@ bool modbus(struct modbus_response *response, struct modbus_request *request, ui
 
 		return true;
 	}
-	else if (request->func == 6)
+	else if (request->func == WRITE_SINGLE_REGISTER)
 	{
 		(*((volatile uint8_t*) (reg_addr))) = request->write_data_lo;
+		return true;
 	}
 
 	return false;
