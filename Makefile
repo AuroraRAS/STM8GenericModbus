@@ -9,8 +9,8 @@ all:
 	$(CC) *.rel $(CFLAGS) $(LIBS)
 
 install:
-	stm8flash -c stlinkv2 -p stm8s105k4 -w main.ihx
-#	stm8flash -c stlinkv2 -p stm8s003f3 -w main.ihx
+#	stm8flash -c stlinkv2 -p stm8s105k4 -w main.ihx
+	stm8flash -c stlinkv2 -p stm8s003f3 -w main.ihx
 
 clean:
 	rm -f *.asm *.ihx *.lst *.rel *.sym *.lk *.map *.rst *.eeprom

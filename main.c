@@ -1,4 +1,4 @@
-#include "stm8s105k4.h"
+#include "stm8s003.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -19,22 +19,19 @@ static uint8_t uart_rx_head;
 static uint8_t uart_rx_size;
 static uint8_t uart_rx_buffer[UINT8_MAX + 1];
 
-static uint8_t uart_tx_head;
-static uint8_t uart_tx_size;
-static uint8_t uart_tx_buffer[UINT8_MAX + 1];
-
 void frame_timer(void) __interrupt 23
 {
 	frame_timeout = true;
 	TIM4_SR &= 0b11111110;
 }
 
-void uart_rx(void) __interrupt 21
+//void uart_rx(void) __interrupt 21
+void uart_rx(void) __interrupt 18
 {
 	// frame timeout set to false
 	frame_timeout = false;
 
-	uart_rx_buffer[uart_rx_size++] = UART2_DR;
+	uart_rx_buffer[uart_rx_size++] = UART1_DR;
 
 	// frame timer set to 0
 	TIM4_CNTR = 0;
@@ -42,40 +39,21 @@ void uart_rx(void) __interrupt 21
 	TIM4_CR1 |= 0b00000001;
 }
 
-void uart_tx(void) __interrupt 20
-{
-	// clear TC bit
-	UART2_SR &= 0b10111111;
-	// we have data in the buffer need to send
-	if(uart_tx_size != uart_tx_head)
-	{
-		// start data transmission
-		UART2_DR = uart_tx_buffer[uart_tx_head++];
-	}
-	else
-	{
-		// transmission complete, stop TX interrupt
-		UART2_CR2 &= 0b01111111;
-	}
-}
-
 void uart_send(uint8_t *data, uint8_t size)
 {
-	uint8_t i;
-	// stop TX interrupt, update the uart TX buffer
-	UART2_CR2 &= 0b01111111;
-	for (i = 0; i < size; i++)
-		uart_tx_buffer[(uint8_t) (uart_tx_head + i)] = data[i];
-	uart_tx_size += size;
-	// restart TX interrupt
-	UART2_CR2 |= 0b10000000;
+	for(uint8_t i=0; i<size; i++)
+	{
+		UART1_DR = data[i];
+		// waiting here, if TXE not set
+		while(!(UART1_SR&0b10000000));
+	}
+	// waiting here, if TC not set
+	while(!(UART1_SR&0b01000000));
 }
 
 void main(void)
 {
 	frame_timeout = false;
-	uart_tx_head = 0;
-	uart_tx_size = 0;
 	uart_rx_head = 0;
 	uart_rx_size = 0;
 
@@ -89,15 +67,16 @@ void main(void)
 	 */
 	// UART init
 	// Set even parity
-	UART2_CR1 &= 0b11111101;
+	UART1_CR1 &= 0b11111101;
 	// Parity control enabled, 1 Start bit, 8 Data bits + 1 parity bit, 1 Stop bit
-	UART2_CR1 |= 0b00010100;
+	UART1_CR1 |= 0b00010100;
 	// RI,TX,RX enable
-	UART2_CR2 |= 0b00101100;
-	UART2_CR3 &= 0b11001111;
+	UART1_CR2 |= 0b00101100;
+	// 1 Stop bit
+//	UART1_CR3 &= 0b11001111;
 
-	UART2_BRR1 = env->UART_BRR1;
-	UART2_BRR2 = env->UART_BRR2;
+	UART1_BRR1 = env->UART_BRR1;
+	UART1_BRR2 = env->UART_BRR2;
 	//*/
 
 	// Timer init
