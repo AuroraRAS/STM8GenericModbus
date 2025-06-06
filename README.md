@@ -48,9 +48,8 @@ This project implements a Modbus RTU slave device specifically designed for the 
 
 Before compiling and flashing the software, configure the UART and Modbus settings using the provided script. This script tailors the necessary UART and timer settings based on specified parameters (Modbus address, baud rate, and master clock frequency) and prepares them for EEPROM storage.
 
-1. **Run the Configuration Script:**
+1. **Run the Configuration Script from the project root:**
    ```
-   cd config
    chmod +x conf.sh
    ./conf.sh
    ```
