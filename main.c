@@ -89,7 +89,7 @@ void main(void)
 	// enable frame timer
 	TIM4_CR1 |= 0b00000001;
 
-	// globle interrupt enable
+        // global interrupt enable
 	__asm__("rim");
 
 //	uart_send("6", 2);
