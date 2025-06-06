@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#ifdef __SDCC
 #include <asm/stm8/features.h>
+#endif
 
 #define READ_COIL_STATUS 01
 #define READ_INPUT_STATUS 02
