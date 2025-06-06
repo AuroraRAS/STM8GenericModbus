@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 
 MODBUS_ADDR=1
 fMASTER=2000000
